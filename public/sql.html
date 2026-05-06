@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<!-- Sends raw SQL in JSON to POST /api/sql (for learning only — dangerous if exposed publicly). -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SQL console</title>
+    <link rel="stylesheet" href="/css/common.css" />
+    <link rel="stylesheet" href="/css/sql.css" />
+  </head>
+  <body>
+    <nav>
+      <a href="/">Users</a>
+      <a href="/sql.html">SQL console</a>
+    </nav>
+    <h1>SQL console</h1>
+    <p class="warn">
+      Queries run as the app DB user. Do not expose this on a public network.
+    </p>
+    <textarea id="sql" spellcheck="false" placeholder="SELECT * FROM users LIMIT 10;"></textarea>
+    <div>
+      <button type="button" class="primary" id="run">Run</button>
+    </div>
+    <!-- Filled by JS: either plain text summary, an error, or an HTML table for result sets. -->
+    <div id="out" hidden></div>
+
+    <script>
+      const sqlEl = document.getElementById("sql");
+      const out = document.getElementById("out");
+      const runBtn = document.getElementById("run");
+
+      function showResult(html, cls) {
+        out.innerHTML = html;
+        out.className = cls; // ok | err — colors come from sql.css
+        out.hidden = false;
+      }
+
+      runBtn.addEventListener("click", async () => {
+        out.hidden = true;
+        const sql = sqlEl.value.trim();
+        if (!sql) {
+          showResult("Enter SQL.", "err");
+          return;
+        }
+        // Server distinguishes "rows come back" vs "just execution stats" (see server.js /api/sql).
+        const r = await fetch("/api/sql", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sql }),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          showResult(escapeHtml(j.error || "Error"), "err");
+          return;
+        }
+        if (j.type === "exec") {
+          // INSERT / UPDATE / DELETE-style response: no rows, just counts.
+          const parts = [
+            "OK",
+            "affectedRows: " + j.affectedRows,
+            j.insertId != null ? "insertId: " + j.insertId : null,
+            j.changedRows != null ? "changedRows: " + j.changedRows : null,
+          ].filter(Boolean);
+          showResult(parts.join("\n"), "ok");
+          return;
+        }
+        if (j.type === "result" && j.columns && j.rows) {
+          showResult(renderTable(j.columns, j.rows), "ok");
+          return;
+        }
+        showResult(escapeHtml(JSON.stringify(j, null, 2)), "ok");
+      });
+
+      function escapeHtml(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function renderTable(columns, rows) {
+        if (!rows.length) {
+          return "<p>No rows.</p>";
+        }
+        let h = "<table class='data'><tr>";
+        for (const c of columns) {
+          h += "<th>" + escapeHtml(c) + "</th>";
+        }
+        h += "</tr>";
+        for (const row of rows) {
+          h += "<tr>";
+          for (const c of columns) {
+            const v = row[c];
+            h += "<td>" + escapeHtml(v === null ? "NULL" : String(v)) + "</td>";
+          }
+          h += "</tr>";
+        }
+        h += "</table>";
+        return h;
+      }
+
+      // Shortcut: Ctrl+Enter runs the query (same as clicking Run).
+      sqlEl.addEventListener("keydown", (e) => {
+        if (e.ctrlKey && e.key === "Enter") runBtn.click();
+      });
+    </script>
+  </body>
+</html>

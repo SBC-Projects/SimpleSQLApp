@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<!-- Add new people at the top. Change anyone in the list: edit the boxes in their row and press Save. -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Users</title>
+    <link rel="stylesheet" href="/css/common.css" />
+    <link rel="stylesheet" href="/css/users.css" />
+  </head>
+  <body>
+    <nav>
+      <a href="/">Users</a>
+      <a href="/sql.html">SQL console</a>
+    </nav>
+    <h1>Users</h1>
+
+    <p id="listErr" class="err" hidden></p>
+
+    <h2>Add a user</h2>
+    <div class="form-section">
+      <form id="userForm">
+        <div class="field">
+          <span class="field-label">Name</span>
+          <input id="name" class="field-input" name="name" required autocomplete="off" />
+        </div>
+        <div class="field">
+          <span class="field-label">Email</span>
+          <input id="email" class="field-input" name="email" type="email" required autocomplete="off" />
+        </div>
+        <p class="form-actions">
+          <button type="submit" class="primary" id="addBtn">Add</button>
+        </p>
+        <p id="formErr" class="err" hidden></p>
+      </form>
+    </div>
+
+    <h2>Everyone in the database</h2>
+    <p id="hint" class="hint">Change letters in a row and click <strong>Save</strong> on that row to store it.</p>
+    <div id="tableWrap"></div>
+
+    <script src="/js/users.js" defer></script>
+  </body>
+</html>
