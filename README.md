@@ -9,6 +9,8 @@ Students can:
 
 **Home repository:** [github.com/SBC-Projects/SimpleSQLApp](https://github.com/SBC-Projects/SimpleSQLApp)
 
+Got the code locally but **can’t push straight to SBC-Projects**? Use **your fork + a pull request** — see **[docs/how-to-pull-request.md](docs/how-to-pull-request.md)**.
+
 Configuration (web port and database file path) is **coded in the repo** (`server.js` and `lib/db.js`) so there are no `.env` files for beginners to configure.
 
 ---
