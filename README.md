@@ -5,7 +5,8 @@ A small classroom demo: **one web server** ([Express](https://expressjs.com/)) t
 Students can:
 
 1. Browse and change **users** in the browser (add people, edit names and emails in the table, delete rows).
-2. Open an **SQL console** page where typed queries run against the **same database**—useful for learning SQL syntax. **Never put that page on the public internet**; it runs whatever SQL the user enters.
+2. Open an **SQL console** page where typed queries run against the **same database**—useful for learning SQL syntax. **Quick insert** buttons drop common snippets (for example listing tables, `PRAGMA foreign_keys = ON`, and sample `users` queries). **Never put that page on the public internet**; it runs whatever SQL the user enters.
+3. Upload an **`.xlsx`** file on **`/upload.html`**, review suggested column names / types / primary keys, copy the `CREATE TABLE` SQL for assignments, then create the table and import rows in two steps.
 
 **Home repository:** [github.com/SBC-Projects/SimpleSQLApp](https://github.com/SBC-Projects/SimpleSQLApp)
 
@@ -62,7 +63,7 @@ npm run init-db
 npm start
 ```
 
-Then open **http://localhost:3000**. Home page **`/`** is the users table; **`/sql.html`** is the SQL practice page.
+Then open **http://localhost:3000**. Home page **`/`** is the users table; **`/sql.html`** is the SQL practice page; **`/upload.html`** imports Excel sheets.
 
 ---
 
@@ -72,6 +73,7 @@ Then open **http://localhost:3000**. Home page **`/`** is the users table; **`/s
 |------|--------|
 | `server.js` | HTTP server + `/api/*` routes (JSON APIs and static files). |
 | `lib/db.js` | Opens the SQLite file using Node’s **`node:sqlite`** module (no extra drivers). |
+| `lib/excel-upload.js` | Excel preview / create-table / import routes used by **`/upload.html`**. |
 | `scripts/init-db.js` | Creates the schema + seeds dummy users (**`npm run init-db`**). |
 | `public/` | Static files for the browser: HTML, **`css/`**, **`js/`**. |
 | `data/` | Where **`simplesql.db`** ends up after you run `npm run init-db`. |

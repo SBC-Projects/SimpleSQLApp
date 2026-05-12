@@ -12,11 +12,23 @@
     <nav>
       <a href="/">Users</a>
       <a href="/sql.html">SQL console</a>
+      <a href="/upload.html">Upload Excel</a>
     </nav>
     <h1>SQL console</h1>
     <p class="warn">
       Queries run as the app DB user. Do not expose this on a public network.
     </p>
+    <div class="sql-helpers" id="sqlSnippets" aria-label="SQL snippet shortcuts">
+      <span class="sql-helpers-label">Quick insert</span>
+      <div class="sql-helpers-buttons">
+        <button type="button" class="sql-snippet" data-snippet="tables">Show tables</button>
+        <button type="button" class="sql-snippet" data-snippet="schemas">Show CREATE SQL</button>
+        <button type="button" class="sql-snippet" data-snippet="foreignKeysOn">Foreign keys ON</button>
+        <button type="button" class="sql-snippet" data-snippet="userColumns">users columns</button>
+        <button type="button" class="sql-snippet" data-snippet="usersSample">users sample</button>
+        <button type="button" class="sql-snippet" data-snippet="usersCount">users count</button>
+      </div>
+    </div>
     <textarea id="sql" spellcheck="false" placeholder="SELECT * FROM users LIMIT 10;"></textarea>
     <div>
       <button type="button" class="primary" id="run">Run</button>
@@ -28,6 +40,39 @@
       const sqlEl = document.getElementById("sql");
       const out = document.getElementById("out");
       const runBtn = document.getElementById("run");
+      const sqlSnippets = document.getElementById("sqlSnippets");
+
+      const SNIPPETS = {
+        tables: "SELECT name FROM sqlite_master WHERE type='table';",
+        schemas:
+          "SELECT name, sql FROM sqlite_master WHERE type='table' ORDER BY name;",
+        foreignKeysOn: "PRAGMA foreign_keys = ON;",
+        userColumns: "PRAGMA table_info(users);",
+        usersSample: "SELECT * FROM users LIMIT 10;",
+        usersCount: "SELECT COUNT(*) AS n FROM users;",
+      };
+
+      function insertSnippet(text) {
+        const el = sqlEl;
+        const start = el.selectionStart;
+        const end = el.selectionEnd;
+        const before = el.value.slice(0, start);
+        const after = el.value.slice(end);
+        const prefix = before.length > 0 && !before.endsWith("\n") ? "\n" : "";
+        const insert = prefix + text;
+        el.value = before + insert + after;
+        const pos = start + insert.length;
+        el.focus();
+        el.setSelectionRange(pos, pos);
+      }
+
+      sqlSnippets.addEventListener("click", (e) => {
+        const btn = e.target.closest(".sql-snippet");
+        if (!btn) return;
+        const key = btn.getAttribute("data-snippet");
+        const sql = SNIPPETS[key];
+        if (sql) insertSnippet(sql);
+      });
 
       function showResult(html, cls) {
         out.innerHTML = html;

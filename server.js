@@ -10,6 +10,7 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import { getDb } from "./lib/db.js";
+import { registerExcelUploadRoutes } from "./lib/excel-upload.js";
 
 /**
  * SQLite reports duplicate emails differently depending on Node version / driver.
@@ -29,7 +30,8 @@ const app = express();
 const port = 3000;
 
 // Parse JSON request bodies (e.g. POST { "name": "...", "email": "..." }) into req.body.
-app.use(express.json({ limit: "1mb" }));
+// Uploads send Excel files as base64 JSON, so this page needs a larger body limit.
+app.use(express.json({ limit: "25mb" }));
 // Serve index.html, css/, etc. from the public/ folder at the site root (e.g. /index.html).
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -122,6 +124,8 @@ app.delete("/api/users/:id", (req, res) => {
     res.status(500).json({ error: String(e.message) });
   }
 });
+
+registerExcelUploadRoutes(app);
 
 /**
  * Run arbitrary SQL from the SQL console page.

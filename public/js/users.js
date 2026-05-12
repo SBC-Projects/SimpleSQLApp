@@ -64,13 +64,6 @@ async function loadUsers() {
  * Each user row carries data-id="..." on buttons so clicks know WHICH id to SAVE or DELETE.
  */
 function drawTable(users) {
-  var hintEl = document.getElementById("hint");
-  if (users.length === 0 && hintEl) {
-    hintEl.hidden = true;
-  } else if (hintEl) {
-    hintEl.hidden = false;
-  }
-
   if (users.length === 0) {
     tableWrap.innerHTML = '<p class="empty">No users yet. Add someone above!</p>';
     return;
@@ -81,8 +74,8 @@ function drawTable(users) {
     html +
     "<th>id</th><th>Name</th><th>Email</th><th>Saved at</th><th></th></tr></thead><tbody>";
 
-  var rowIndex = 0;
-  for (; rowIndex < users.length; rowIndex++) {
+  
+  for (var rowIndex = 0; rowIndex < users.length; rowIndex++) {
     var person = users[rowIndex];
     var idText = escapeHtml(String(person.id));
     // Normalize missing fields — JSON might omit keys; null is also possible from the DB driver

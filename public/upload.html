@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<!-- Upload an Excel sheet, choose SQL column setup, create a table, then import rows. -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Upload Excel</title>
+    <link rel="stylesheet" href="/css/common.css" />
+    <link rel="stylesheet" href="/css/upload.css" />
+  </head>
+  <body>
+    <nav>
+      <a href="/">Users</a>
+      <a href="/sql.html">SQL console</a>
+      <a href="/upload.html">Upload Excel</a>
+    </nav>
+
+    <h1>Upload Excel</h1>
+    <p class="intro">
+      Drag in an Excel file, check the suggested table setup, then create the table before importing the rows.
+    </p>
+
+    <section class="instructions">
+      <h2>Instructions</h2>
+      <ol>
+        <li>Drop a <strong>.xlsx</strong> file into the upload box.</li>
+        <li>Check the table name, column names, data types, required fields, and primary key.</li>
+        <li>Copy the <strong>CREATE TABLE</strong> SQL into your assignment if you need to show your schema.</li>
+        <li>Click <strong>Create table</strong> to add the empty table to SQLite.</li>
+        <li>Click <strong>Import rows</strong> to fill the table with the Excel data.</li>
+      </ol>
+    </section>
+
+    <section id="dropZone" class="drop-zone">
+      <p><strong>Drop Excel file here</strong></p>
+      <p>or</p>
+      <label class="file-button">
+        Choose file
+        <input id="fileInput" type="file" accept=".xlsx" />
+      </label>
+      <p id="fileName" class="hint">No file selected.</p>
+    </section>
+
+    <p id="errorBox" class="err" hidden role="status" aria-live="polite"></p>
+    <p id="statusBox" class="ok" hidden role="status" aria-live="polite"></p>
+
+    <section id="setupSection" hidden>
+      <h2>1. Review table setup</h2>
+      <p id="sheetInfo" class="hint"></p>
+
+      <label class="field">
+        <span class="field-label">Table name</span>
+        <input id="tableName" class="field-input" autocomplete="off" />
+      </label>
+
+      <div id="columnsWrap"></div>
+
+      <h2>2. Copy table creation SQL</h2>
+      <p class="hint">
+        This is the table creation string you can copy and paste into your assignment.
+      </p>
+      <textarea id="createSql" readonly spellcheck="false"></textarea>
+      <p class="actions">
+        <button type="button" id="copySql">Copy SQL</button>
+        <button type="button" id="createTable" class="primary">Create table</button>
+        <button type="button" id="importRows" class="primary" disabled>Import rows</button>
+      </p>
+
+      <h2>3. Preview rows</h2>
+      <p class="hint">Showing the first few rows only. The import uses every row found in the sheet.</p>
+      <div id="sampleWrap"></div>
+    </section>
+
+    <script src="/js/upload.js" defer></script>
+  </body>
+</html>

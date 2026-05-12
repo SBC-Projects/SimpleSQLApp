@@ -18,6 +18,40 @@ h1 {
   margin-bottom: 16px;
 }
 
+.sql-helpers {
+  margin-bottom: 10px;
+}
+
+.sql-helpers-label {
+  display: block;
+  font-family: system-ui, "Segoe UI", sans-serif;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.sql-helpers-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sql-helpers-buttons button {
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--fg);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-family: system-ui, "Segoe UI", sans-serif;
+  font-size: 12px;
+}
+
+.sql-helpers-buttons button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 textarea {
   width: 100%;
   min-height: 140px;
@@ -50,11 +84,13 @@ button.primary {
   border-radius: 8px;
   padding: 12px;
   background: var(--panel);
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: auto;
   max-height: 60vh;
   font-size: 13px;
   white-space: pre-wrap;
-  word-break: break-word;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 #out.ok {
@@ -70,6 +106,9 @@ table.data {
   font-size: 13px;
   margin-top: 8px;
   font-family: ui-monospace, Consolas, monospace;
+  width: max-content;
+  max-width: none;
+  white-space: normal;
 }
 
 table.data th,
@@ -77,6 +116,9 @@ table.data td {
   border: 1px solid var(--border);
   padding: 6px 10px;
   text-align: left;
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
 }
 
 table.data th {

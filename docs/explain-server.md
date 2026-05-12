@@ -82,7 +82,7 @@ This is often used for setup jobs.
 ## 3a. Reading JSON with `express.json`
 
 ```js
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "25mb" }));
 ```
 
 This line lets the server read JSON sent from the browser.
@@ -127,7 +127,7 @@ That gives:
 "ada@example.com"
 ```
 
-The `limit: "1mb"` part means the server will not accept huge amounts of data.
+The `limit: "25mb"` part caps how large a JSON body can be. It is set higher than usual because the **Excel upload** page sends the spreadsheet as base64 inside JSON (see `lib/excel-upload.js` and `POST /api/upload/preview`).
 
 ---
 
@@ -625,6 +625,30 @@ These two things sound similar, but they are different.
 | SQLite `.get()` | The database gives back one row |
 
 They are not the same thing.
+
+---
+
+## 20a. Excel upload (`lib/excel-upload.js`)
+
+The upload page (`/upload.html`) does not put all the Excel logic inside `server.js`.
+
+Instead, `server.js` calls:
+
+```js
+import { registerExcelUploadRoutes } from "./lib/excel-upload.js";
+
+registerExcelUploadRoutes(app);
+```
+
+That function registers three JSON routes:
+
+| Route | Role |
+| ----- | ---- |
+| `POST /api/upload/preview` | First pass: read the `.xlsx`, guess column names and types, return sample rows and a suggested `CREATE TABLE` string. |
+| `POST /api/upload/create-table` | Run the `CREATE TABLE` the student confirmed (empty table). |
+| `POST /api/upload/import` | Second pass: insert all data rows. |
+
+The server keeps a short-lived in-memory map of parsed uploads (by `uploadId`) between preview and import so the browser does not have to send the whole file again.
 
 ---
 

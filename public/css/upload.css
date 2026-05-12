@@ -1,0 +1,197 @@
+/* Upload page: drag/drop area, schema controls, SQL output, and preview table. */
+body {
+  font-family: system-ui, "Segoe UI", sans-serif;
+  max-width: 1100px;
+}
+
+h1 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+h2 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 24px 0 8px;
+}
+
+.intro,
+.hint {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.intro {
+  margin: 0 0 16px;
+}
+
+.instructions,
+.drop-zone,
+#setupSection {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.instructions ol {
+  margin: 8px 0 0;
+  padding-left: 22px;
+}
+
+.instructions li {
+  margin: 6px 0;
+}
+
+.drop-zone {
+  text-align: center;
+  border-style: dashed;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.drop-zone.dragging {
+  border-color: var(--accent);
+  background: #eff6ff;
+}
+
+.file-button,
+button {
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: inherit;
+  padding: 7px 13px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.file-button {
+  display: inline-block;
+}
+
+.file-button input {
+  display: none;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+button.busy:disabled {
+  cursor: wait;
+  opacity: 0.85;
+}
+
+.field {
+  display: block;
+  margin: 12px 0;
+}
+
+.field-label {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.field-input,
+.column-input,
+.type-select {
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 9px;
+}
+
+.field-input {
+  width: 100%;
+  max-width: 360px;
+}
+
+.column-input {
+  width: 100%;
+  min-width: 10rem;
+}
+
+.type-select {
+  min-width: 8rem;
+}
+
+#columnsWrap,
+#sampleWrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#columnsWrap table,
+#sampleWrap table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin-top: 12px;
+}
+
+#columnsWrap th,
+#columnsWrap td,
+#sampleWrap th,
+#sampleWrap td {
+  text-align: left;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+#columnsWrap th,
+#sampleWrap th {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+textarea {
+  width: 100%;
+  min-height: 170px;
+  box-sizing: border-box;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--fg);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.err,
+.ok {
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.err {
+  color: #b91c1c;
+}
+
+.ok {
+  color: #166534;
+}

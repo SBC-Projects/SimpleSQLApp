@@ -11,6 +11,7 @@
     "node": ">=22.5.0"
   },
   "dependencies": {
-    "express": "^4.21.1"
+    "express": "^4.21.1",
+    "read-excel-file": "^9.0.9"
   }
 }

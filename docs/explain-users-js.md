@@ -530,6 +530,30 @@ tableWrap.innerHTML = html;
 
 That changes what the user sees.
 
+The hint text above the table is different.
+
+In `index.html`, it is just normal HTML:
+
+```html
+<p id="hint" class="hint">Change letters in a row and click <strong>Save</strong> on that row to store it.</p>
+```
+
+An older version of `users.js` used a variable called `hintEl`.
+
+That name meant:
+
+```text
+hint element
+```
+
+It was the JavaScript variable for the HTML element with `id="hint"`.
+
+The code used to hide the hint when there were no users.
+
+Now that logic is gone.
+
+The hint stays visible all the time.
+
 ---
 
 ## 20. `innerHTML`
