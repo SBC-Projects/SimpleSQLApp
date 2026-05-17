@@ -11,6 +11,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { getDb } from "./lib/db.js";
 import { registerExcelUploadRoutes } from "./lib/excel-upload.js";
+import { registerExploreRoutes } from "./lib/explore.js";
 
 /**
  * SQLite reports duplicate emails differently depending on Node version / driver.
@@ -126,6 +127,7 @@ app.delete("/api/users/:id", (req, res) => {
 });
 
 registerExcelUploadRoutes(app);
+registerExploreRoutes(app);
 
 /**
  * Run arbitrary SQL from the SQL console page.

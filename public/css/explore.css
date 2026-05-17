@@ -1,0 +1,281 @@
+/*
+ * Explore page styles.
+ *
+ * The bar chart and histogram are built out of plain HTML <div>s rather than
+ * a chart library — read explore.js to see how each row is just a coloured
+ * div whose width is set as a percentage of the maximum count.
+ */
+
+body {
+  font-family: system-ui, "Segoe UI", sans-serif;
+  max-width: 1100px;
+}
+
+h1 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+h2 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 24px 0 8px;
+}
+
+.intro,
+.hint {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.intro {
+  margin: 0 0 16px;
+}
+
+.instructions,
+.picker,
+.result-section {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.instructions ol {
+  margin: 8px 0 0;
+  padding-left: 22px;
+}
+
+.instructions li {
+  margin: 6px 0;
+}
+
+/* --- Picker row (3 dropdowns) ---------------------------------------------*/
+
+.picker-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.picker-row .field {
+  flex: 1 1 220px;
+  margin: 0;
+}
+
+.field-label {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.field-input {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  padding: 7px 9px;
+}
+
+.field-input:disabled {
+  opacity: 0.6;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+button {
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: inherit;
+  padding: 7px 13px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.err,
+.ok {
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.err {
+  color: #b91c1c;
+}
+
+.ok {
+  color: #166534;
+}
+
+/* --- Output area -----------------------------------------------------------*/
+
+.summary-out {
+  font-size: 14px;
+}
+
+.summary-out .empty {
+  color: var(--muted);
+  margin: 0;
+}
+
+.summary-out h3 {
+  font-size: 1rem;
+  margin: 0 0 12px;
+}
+
+/* Tag shown next to numeric columns in the column dropdown's helper text. */
+.chip {
+  display: inline-block;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #e0e7ff;
+  color: #1e3a8a;
+  vertical-align: middle;
+}
+
+.chip.num {
+  background: #dcfce7;
+  color: #166534;
+}
+
+/* --- Stats grid (overview + numeric_stats) --------------------------------*/
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.stat-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--bg);
+}
+
+.stat-label {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+/* --- Bar chart (frequency + histogram) ------------------------------------*/
+
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.bar-row {
+  display: grid;
+  /* Label | bar (fills) | number aligned on the right.
+     minmax(0, ...) lets the middle column shrink instead of overflowing. */
+  grid-template-columns: minmax(120px, 22%) minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.bar-label {
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+  height: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.bar-fill {
+  background: var(--accent);
+  height: 100%;
+  border-radius: 4px;
+  /* Width is set inline by the JS based on count / max-count. */
+}
+
+.bar-count {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* --- Unique values list ---------------------------------------------------*/
+
+.unique-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.unique-list li {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+/* --- "What SQL ran" panel -------------------------------------------------*/
+
+.sql-panel {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  padding: 10px 12px;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  color: var(--fg);
+}
+
+.sql-panel-label {
+  display: block;
+  font-family: system-ui, "Segoe UI", sans-serif;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}

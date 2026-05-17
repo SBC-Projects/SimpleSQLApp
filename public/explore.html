@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<!--
+  Explore data: pick a table, pick a column, pick how to summarise it.
+
+  This page does not write to the database — it only READS data and shows
+  it back to the student in different shapes (counts, bar chart, statistics,
+  histogram, list of unique values). The server endpoints powering it live
+  in lib/explore.js.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Explore data</title>
+    <link rel="stylesheet" href="/css/common.css" />
+    <link rel="stylesheet" href="/css/explore.css" />
+  </head>
+  <body>
+    <nav>
+      <a href="/">Users</a>
+      <a href="/sql.html">SQL console</a>
+      <a href="/upload.html">Upload Excel</a>
+      <a href="/explore.html">Explore data</a>
+    </nav>
+
+    <h1>Explore data</h1>
+    <p class="intro">
+      After you upload a spreadsheet on the Upload page, every column of every
+      table in the database is available here. Pick a table, then a column,
+      then a way to summarise it.
+    </p>
+
+    <section class="instructions">
+      <h2>How to use this page</h2>
+      <ol>
+        <li><strong>Choose a table.</strong> The dropdown lists every table in the database (including any you uploaded).</li>
+        <li><strong>Choose a column.</strong> Columns marked <span class="chip num">number</span> can use the number-only methods.</li>
+        <li><strong>Choose a display method.</strong> Each method runs a small SQL query — the SQL is shown with the result so you can see how it works.</li>
+        <li><strong>Click Show summary</strong> to send your choices to the server and draw the result.</li>
+      </ol>
+    </section>
+
+    <section class="picker">
+      <div class="picker-row">
+        <label class="field">
+          <span class="field-label">1. Table</span>
+          <select id="tableSelect" class="field-input">
+            <option value="">Loading tables…</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span class="field-label">2. Column</span>
+          <select id="columnSelect" class="field-input" disabled>
+            <option value="">Pick a table first</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span class="field-label">3. Display method</span>
+          <select id="methodSelect" class="field-input" disabled>
+            <option value="">Pick a column first</option>
+          </select>
+        </label>
+      </div>
+
+      <p id="methodHint" class="hint">Pick a method to see what it does.</p>
+
+      <p class="actions">
+        <button type="button" id="runBtn" class="primary" disabled>Show summary</button>
+      </p>
+
+      <p id="errorBox" class="err" hidden role="status" aria-live="polite"></p>
+      <p id="statusBox" class="ok" hidden role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="result-section">
+      <h2>Summary</h2>
+      <p class="hint">
+        The result appears below. The grey box at the bottom shows the actual
+        SQL the server ran — try copying it into the
+        <a href="/sql.html">SQL console</a> to play with it.
+      </p>
+      <div id="summaryOut" class="summary-out">
+        <p class="empty">Pick a table, column and method, then click <strong>Show summary</strong>.</p>
+      </div>
+    </section>
+
+    <script src="/js/explore.js" defer></script>
+  </body>
+</html>
