@@ -31,9 +31,37 @@
       </div>
     </div>
     <textarea id="sql" spellcheck="false" placeholder="SELECT * FROM users LIMIT 10;"></textarea>
-    <div>
+    <div class="sql-run-row">
       <button type="button" class="primary" id="run">Run</button>
     </div>
+
+    <div class="schema-overview" id="schemaOverview" aria-label="Tables and columns">
+      <div class="schema-overview-header">
+        <span class="sql-helpers-label">Tables and columns</span>
+        <button type="button" id="refreshSchema">Refresh</button>
+      </div>
+      <div id="schemaList" class="schema-list">
+        <p class="hint">Loading tables…</p>
+      </div>
+    </div>
+
+    <div class="table-explorer" id="tableExplorer" aria-label="Browse tables">
+      <span class="sql-helpers-label">Browse a table</span>
+      <div class="table-explorer-row">
+        <label class="table-select-label" for="tableSelect">Table</label>
+        <select id="tableSelect">
+          <option value="">Select a table…</option>
+        </select>
+        <button type="button" id="previewTable" disabled>Preview rows</button>
+        <button type="button" id="tableColumns" disabled>Columns</button>
+        <button type="button" id="tableCount" disabled>Count</button>
+        <button type="button" id="tableSchema" disabled>CREATE SQL</button>
+      </div>
+      <p class="hint" id="tableExplorerHint">
+        Choose a table to preview sample rows below. Your SQL text above is left alone.
+      </p>
+    </div>
+
     <!-- Filled by JS: either plain text summary, an error, or an HTML table for result sets. -->
     <div id="out" hidden></div>
 
@@ -42,6 +70,14 @@
       const out = document.getElementById("out");
       const runBtn = document.getElementById("run");
       const sqlSnippets = document.getElementById("sqlSnippets");
+      const schemaList = document.getElementById("schemaList");
+      const refreshSchema = document.getElementById("refreshSchema");
+      const tableSelect = document.getElementById("tableSelect");
+      const previewTable = document.getElementById("previewTable");
+      const tableColumns = document.getElementById("tableColumns");
+      const tableCount = document.getElementById("tableCount");
+      const tableSchema = document.getElementById("tableSchema");
+      const tableExplorerHint = document.getElementById("tableExplorerHint");
 
       const SNIPPETS = {
         tables: "SELECT name FROM sqlite_master WHERE type='table';",
@@ -52,6 +88,21 @@
         usersSample: "SELECT * FROM users LIMIT 10;",
         usersCount: "SELECT COUNT(*) AS n FROM users;",
       };
+
+      function quoteIdent(name) {
+        return '"' + String(name).replace(/"/g, '""') + '"';
+      }
+
+      function selectedTable() {
+        return tableSelect.value;
+      }
+
+      function setExplorerEnabled(enabled) {
+        previewTable.disabled = !enabled;
+        tableColumns.disabled = !enabled;
+        tableCount.disabled = !enabled;
+        tableSchema.disabled = !enabled;
+      }
 
       function insertSnippet(text) {
         const el = sqlEl;
@@ -81,18 +132,19 @@
         out.hidden = false;
       }
 
-      runBtn.addEventListener("click", async () => {
+      // Browse helpers never touch the SQL textarea — students keep typing there.
+      async function runSql(sql) {
         out.hidden = true;
-        const sql = sqlEl.value.trim();
-        if (!sql) {
+        const trimmed = String(sql || "").trim();
+        if (!trimmed) {
           showResult("Enter SQL.", "err");
           return;
         }
-        // Server distinguishes "rows come back" vs "just execution stats" (see server.js /api/sql).
+
         const r = await fetch("/api/sql", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sql }),
+          body: JSON.stringify({ sql: trimmed }),
         });
         const j = await r.json().catch(() => ({}));
         if (!r.ok) {
@@ -100,7 +152,6 @@
           return;
         }
         if (j.type === "exec") {
-          // INSERT / UPDATE / DELETE-style response: no rows, just counts.
           const parts = [
             "OK",
             "affectedRows: " + j.affectedRows,
@@ -115,6 +166,140 @@
           return;
         }
         showResult(escapeHtml(JSON.stringify(j, null, 2)), "ok");
+      }
+
+      runBtn.addEventListener("click", async () => {
+        await runSql(sqlEl.value);
+      });
+
+      function renderSchemaOverview(tablesWithColumns) {
+        if (!tablesWithColumns.length) {
+          schemaList.innerHTML = '<p class="hint">No user tables found yet.</p>';
+          return;
+        }
+
+        let html = "";
+        for (const entry of tablesWithColumns) {
+          html += '<div class="schema-table">';
+          html += '<div class="schema-table-name">' + escapeHtml(entry.name) + "</div>";
+          if (!entry.columns.length) {
+            html += '<p class="hint">No columns.</p>';
+          } else {
+            html += '<ul class="schema-columns">';
+            for (const column of entry.columns) {
+              const bits = [escapeHtml(column.name)];
+              if (column.type) bits.push('<span class="schema-type">' + escapeHtml(column.type) + "</span>");
+              if (column.primaryKey) bits.push('<span class="schema-flag">PK</span>');
+              html += "<li>" + bits.join(" ") + "</li>";
+            }
+            html += "</ul>";
+          }
+          html += "</div>";
+        }
+        schemaList.innerHTML = html;
+      }
+
+      async function loadTables(preferSelected) {
+        const previous = preferSelected || selectedTable();
+        tableSelect.innerHTML = '<option value="">Select a table…</option>';
+        setExplorerEnabled(false);
+        schemaList.innerHTML = '<p class="hint">Loading tables…</p>';
+        tableExplorerHint.textContent =
+          "Choose a table to preview sample rows below. Your SQL text above is left alone.";
+
+        try {
+          const r = await fetch("/api/explore/tables");
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok) {
+            throw new Error(j.error || "Could not load tables.");
+          }
+
+          const tables = Array.isArray(j.tables) ? j.tables : [];
+          for (const name of tables) {
+            const option = document.createElement("option");
+            option.value = name;
+            option.textContent = name;
+            tableSelect.appendChild(option);
+          }
+
+          const tablesWithColumns = await Promise.all(
+            tables.map(async (name) => {
+              try {
+                const cr = await fetch(
+                  "/api/explore/columns?table=" + encodeURIComponent(name)
+                );
+                const cj = await cr.json().catch(() => ({}));
+                if (!cr.ok) {
+                  return { name, columns: [] };
+                }
+                return { name, columns: Array.isArray(cj.columns) ? cj.columns : [] };
+              } catch (ignored) {
+                return { name, columns: [] };
+              }
+            })
+          );
+          renderSchemaOverview(tablesWithColumns);
+
+          if (previous && tables.includes(previous)) {
+            tableSelect.value = previous;
+            setExplorerEnabled(true);
+          } else if (tables.length === 0) {
+            tableExplorerHint.textContent = "No user tables found yet.";
+          }
+        } catch (e) {
+          schemaList.innerHTML =
+            '<p class="hint">' + escapeHtml(String(e.message || e)) + "</p>";
+          tableExplorerHint.textContent = String(e.message || e);
+        }
+      }
+
+      async function previewSelectedTable() {
+        const table = selectedTable();
+        if (!table) return;
+        tableExplorerHint.textContent =
+          "Sample rows from " + table + " (LIMIT 10). SQL textarea unchanged.";
+        await runSql("SELECT * FROM " + quoteIdent(table) + " LIMIT 10;");
+      }
+
+      tableSelect.addEventListener("change", async () => {
+        const table = selectedTable();
+        setExplorerEnabled(Boolean(table));
+        if (!table) {
+          tableExplorerHint.textContent =
+            "Choose a table to preview sample rows below. Your SQL text above is left alone.";
+          return;
+        }
+        await previewSelectedTable();
+      });
+
+      refreshSchema.addEventListener("click", () => {
+        loadTables(selectedTable());
+      });
+
+      previewTable.addEventListener("click", () => {
+        previewSelectedTable();
+      });
+
+      tableColumns.addEventListener("click", async () => {
+        const table = selectedTable();
+        if (!table) return;
+        await runSql("PRAGMA table_info(" + quoteIdent(table) + ");");
+      });
+
+      tableCount.addEventListener("click", async () => {
+        const table = selectedTable();
+        if (!table) return;
+        await runSql("SELECT COUNT(*) AS n FROM " + quoteIdent(table) + ";");
+      });
+
+      tableSchema.addEventListener("click", async () => {
+        const table = selectedTable();
+        if (!table) return;
+        await runSql(
+          "SELECT name, sql FROM sqlite_master WHERE type='table' AND name = '" +
+            String(table).replace(/'/g, "''") +
+            "';"
+        );
       });
 
       function escapeHtml(s) {
@@ -150,6 +335,8 @@
       sqlEl.addEventListener("keydown", (e) => {
         if (e.ctrlKey && e.key === "Enter") runBtn.click();
       });
+
+      loadTables();
     </script>
   </body>
 </html>

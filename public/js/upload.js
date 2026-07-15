@@ -4,7 +4,8 @@
  * Flow:
  * 1. Browser reads the Excel file and sends it to /api/upload/preview.
  * 2. Server returns suggested column names, data types, primary keys, and sample rows.
- * 3. Student reviews the CREATE TABLE SQL, creates the table, then imports all rows.
+ * 3. Student reviews/edits the CREATE TABLE SQL (including foreign keys), can copy/download
+ *    INSERT SQL as buttons (without showing the string), then creates the table and imports rows.
  */
 
 var dropZone = document.getElementById("dropZone");
@@ -20,6 +21,9 @@ var createSql = document.getElementById("createSql");
 var copySql = document.getElementById("copySql");
 var createTable = document.getElementById("createTable");
 var importRows = document.getElementById("importRows");
+var copyInsertSql = document.getElementById("copyInsertSql");
+var downloadInsertSql = document.getElementById("downloadInsertSql");
+var actionFeedback = document.getElementById("actionFeedback");
 var sampleWrap = document.getElementById("sampleWrap");
 
 var uploadState = null;
@@ -37,9 +41,29 @@ function escapeHtml(text) {
   return text;
 }
 
+function showActionFeedback(message, kind) {
+  actionFeedback.textContent = message;
+  actionFeedback.className = "action-feedback " + (kind || "ok");
+  actionFeedback.hidden = false;
+  try {
+    actionFeedback.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  } catch (ignored) {
+    /* older browsers */
+  }
+}
+
+function clearActionFeedback() {
+  actionFeedback.hidden = true;
+  actionFeedback.textContent = "";
+  actionFeedback.className = "action-feedback";
+}
+
 function showError(message) {
   errorBox.textContent = message;
   errorBox.hidden = false;
+  if (setupSection && !setupSection.hidden) {
+    showActionFeedback(message, "err");
+  }
 }
 
 function clearError() {
@@ -75,6 +99,18 @@ function sanitizeIdentifier(value, fallback) {
 
 function quoteIdentifier(identifier) {
   return '"' + identifier + '"';
+}
+
+function downloadText(filename, text) {
+  var blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+  var url = URL.createObjectURL(blob);
+  var link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 function buildCreateSql() {
@@ -155,27 +191,28 @@ function readSetupFromPage(markChanged) {
     var primaryKey = row.querySelector(".pk-input").checked;
     var notNullInput = row.querySelector(".not-null-input");
 
-    if (primaryKey) {
-      notNullInput.checked = true;
-    }
-
     uploadState.columns[i].name = row.querySelector(".column-input").value;
     uploadState.columns[i].type = row.querySelector(".type-select").value;
     uploadState.columns[i].primaryKey = primaryKey;
-    uploadState.columns[i].notNull = notNullInput.checked || primaryKey;
+    uploadState.columns[i].notNull = notNullInput.checked;
   }
 
   if (markChanged) {
     uploadState.tableCreated = false;
+    uploadState.createSqlEdited = false;
     importRows.disabled = true;
   }
 
   try {
-    createSql.value = buildCreateSql();
+    if (!uploadState.createSqlEdited) {
+      createSql.value = buildCreateSql();
+    }
     createTable.disabled = false;
     clearError();
   } catch (e) {
-    createSql.value = String(e.message);
+    if (!uploadState.createSqlEdited) {
+      createSql.value = String(e.message);
+    }
     createTable.disabled = true;
   }
 }
@@ -210,7 +247,7 @@ function renderColumns() {
       " /></td>";
     html +=
       '<td><input class="not-null-input" type="checkbox"' +
-      (column.notNull || column.primaryKey ? " checked" : "") +
+      (column.notNull ? " checked" : "") +
       " /></td>";
     html += "</tr>";
   }
@@ -245,12 +282,17 @@ function renderSampleRows() {
 }
 
 function renderPreview(data) {
+  var columns = (data.columns || []).map(function (column) {
+    return Object.assign({}, column, { notNull: false });
+  });
+
   uploadState = {
     uploadId: data.uploadId,
-    columns: data.columns,
+    columns: columns,
     rowCount: data.rowCount,
     sampleRows: data.sampleRows,
     tableCreated: false,
+    createSqlEdited: false,
   };
 
   tableNameInput.value = data.tableName;
@@ -300,6 +342,7 @@ async function postJson(url, payload) {
 async function previewFile(file) {
   clearError();
   clearStatus();
+  clearActionFeedback();
 
   if (!file || !/\.xlsx$/i.test(file.name)) {
     showError("Choose an Excel file ending in .xlsx.");
@@ -316,7 +359,7 @@ async function previewFile(file) {
       dataBase64: dataBase64,
     });
     renderPreview(data);
-    showStatus("Preview ready. Check the schema, then create the table.");
+    showStatus("Preview ready. Edit the CREATE TABLE SQL if you need foreign keys, then create the table.");
   } catch (e) {
     showError(String(e.message));
     clearStatus();
@@ -353,10 +396,31 @@ columnsWrap.addEventListener("change", function () {
 tableNameInput.addEventListener("input", function () {
   if (uploadState) {
     uploadState.tableCreated = false;
+    uploadState.createSqlEdited = false;
     importRows.disabled = true;
     readSetupFromPage(false);
   }
 });
+
+createSql.addEventListener("input", function () {
+  if (uploadState) {
+    uploadState.createSqlEdited = true;
+    uploadState.tableCreated = false;
+    importRows.disabled = true;
+  }
+});
+
+async function fetchInsertSql() {
+  if (!uploadState) {
+    throw new Error("Upload a file first.");
+  }
+  readSetupFromPage(false);
+  return postJson("/api/upload/insert-sql", {
+    uploadId: uploadState.uploadId,
+    tableName: tableNameInput.value,
+    columns: uploadState.columns,
+  });
+}
 
 copySql.addEventListener("click", async function () {
   try {
@@ -369,6 +433,44 @@ copySql.addEventListener("click", async function () {
   }
 });
 
+copyInsertSql.addEventListener("click", async function () {
+  clearError();
+  copyInsertSql.disabled = true;
+  downloadInsertSql.disabled = true;
+  try {
+    var data = await fetchInsertSql();
+    try {
+      await navigator.clipboard.writeText(data.insertSql);
+      showStatus("INSERT SQL copied (" + data.rowCount + " rows).");
+    } catch (ignored) {
+      showError("Could not copy to the clipboard. Try Download INSERT SQL instead.");
+    }
+  } catch (e) {
+    showError(String(e.message));
+    clearStatus();
+  } finally {
+    copyInsertSql.disabled = false;
+    downloadInsertSql.disabled = false;
+  }
+});
+
+downloadInsertSql.addEventListener("click", async function () {
+  clearError();
+  copyInsertSql.disabled = true;
+  downloadInsertSql.disabled = true;
+  try {
+    var data = await fetchInsertSql();
+    downloadText(data.tableName + "_insert.sql", data.insertSql);
+    showStatus("Downloaded " + data.tableName + "_insert.sql (" + data.rowCount + " rows).");
+  } catch (e) {
+    showError(String(e.message));
+    clearStatus();
+  } finally {
+    copyInsertSql.disabled = false;
+    downloadInsertSql.disabled = false;
+  }
+});
+
 createTable.addEventListener("click", async function () {
   if (!uploadState) {
     return;
@@ -376,9 +478,13 @@ createTable.addEventListener("click", async function () {
 
   readSetupFromPage(false);
   clearError();
-  showStatus("Sending CREATE TABLE to the server…");
+  clearStatus();
+  showActionFeedback("Creating table…", "busy");
+  showStatus("Creating table…");
 
   copySql.disabled = true;
+  copyInsertSql.disabled = true;
+  downloadInsertSql.disabled = true;
   importRows.disabled = true;
   createTable.disabled = true;
   createTable.classList.add("busy");
@@ -390,22 +496,28 @@ createTable.addEventListener("click", async function () {
       uploadId: uploadState.uploadId,
       tableName: tableNameInput.value,
       columns: uploadState.columns,
+      createSql: createSql.value,
     });
     createSql.value = data.createSql;
+    uploadState.createSqlEdited = true;
     uploadState.tableCreated = true;
     importRows.disabled = false;
-    showStatus("Table created in SQLite. You can import the rows next.");
+    var createdMessage =
+      'Table "' + data.tableName + '" created. Next: click Import rows.';
+    showActionFeedback(createdMessage, "ok");
+    showStatus(createdMessage);
   } catch (e) {
     showError(String(e.message));
     clearStatus();
   } finally {
     copySql.disabled = false;
+    copyInsertSql.disabled = false;
+    downloadInsertSql.disabled = false;
     createTable.classList.remove("busy");
     createTable.removeAttribute("aria-busy");
     createTable.textContent = LABEL_CREATE_TABLE;
     createTable.disabled = false;
     importRows.disabled = !uploadState || !uploadState.tableCreated;
-    readSetupFromPage(false);
   }
 });
 
@@ -416,9 +528,13 @@ importRows.addEventListener("click", async function () {
   }
 
   clearError();
-  showStatus("Sending rows to the server (this can take a moment on large sheets)…");
+  clearStatus();
+  showActionFeedback("Importing rows…", "busy");
+  showStatus("Importing rows…");
 
   copySql.disabled = true;
+  copyInsertSql.disabled = true;
+  downloadInsertSql.disabled = true;
   createTable.disabled = true;
   importRows.disabled = true;
   importRows.classList.add("busy");
@@ -433,13 +549,18 @@ importRows.addEventListener("click", async function () {
       columns: uploadState.columns,
     });
     importOk = true;
-    showStatus("Done: imported " + data.insertedRows + " rows into table " + data.tableName + ".");
+    var doneMessage =
+      "Imported " + data.insertedRows + ' rows into "' + data.tableName + '".';
+    showActionFeedback(doneMessage, "ok");
+    showStatus(doneMessage);
     importRows.disabled = true;
   } catch (e) {
     showError(String(e.message));
     clearStatus();
   } finally {
     copySql.disabled = false;
+    copyInsertSql.disabled = false;
+    downloadInsertSql.disabled = false;
     importRows.classList.remove("busy");
     importRows.removeAttribute("aria-busy");
     importRows.textContent = LABEL_IMPORT_ROWS;

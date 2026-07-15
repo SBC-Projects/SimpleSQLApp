@@ -26,7 +26,14 @@
       <ol>
         <li>Drop a <strong>.xlsx</strong> file into the upload box.</li>
         <li>Check the table name, column names, data types, required fields, and primary key.</li>
-        <li>Copy the <strong>CREATE TABLE</strong> SQL into your assignment if you need to show your schema.</li>
+        <li>
+          Edit the <strong>CREATE TABLE</strong> SQL if you need foreign keys, then copy it into your
+          assignment.
+        </li>
+        <li>
+          Copy or download the <strong>INSERT</strong> SQL for your assignment whenever you like
+          (before or after importing).
+        </li>
         <li>Click <strong>Create table</strong> to add the empty table to SQLite.</li>
         <li>Click <strong>Import rows</strong> to fill the table with the Excel data.</li>
       </ol>
@@ -56,16 +63,22 @@
 
       <div id="columnsWrap"></div>
 
-      <h2>2. Copy table creation SQL</h2>
+      <h2>2. Edit and copy table creation SQL</h2>
       <p class="hint">
-        This is the table creation string you can copy and paste into your assignment.
+        This CREATE TABLE string is editable. Reminder: add foreign keys here when another table owns
+        the related key, for example
+        <code>FOREIGN KEY (customer_id) REFERENCES customers(id)</code>
+        before the closing parenthesis. Then copy it into your assignment.
       </p>
-      <textarea id="createSql" readonly spellcheck="false"></textarea>
+      <textarea id="createSql" spellcheck="false"></textarea>
       <p class="actions">
-        <button type="button" id="copySql">Copy SQL</button>
         <button type="button" id="createTable" class="primary">Create table</button>
         <button type="button" id="importRows" class="primary" disabled>Import rows</button>
+        <button type="button" id="copySql">Copy CREATE SQL</button>
+        <button type="button" id="copyInsertSql">Copy INSERT SQL</button>
+        <button type="button" id="downloadInsertSql">Download INSERT SQL</button>
       </p>
+      <p id="actionFeedback" class="action-feedback" hidden role="status" aria-live="polite"></p>
 
       <h2>3. Preview rows</h2>
       <p class="hint">Showing the first few rows only. The import uses every row found in the sheet.</p>

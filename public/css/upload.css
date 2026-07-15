@@ -176,10 +176,42 @@ textarea {
   resize: vertical;
 }
 
+.hint code {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.action-feedback {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+.action-feedback.ok {
+  color: #166534;
+  background: #ecfdf3;
+  border-color: #bbf7d0;
+}
+
+.action-feedback.err {
+  color: #b91c1c;
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.action-feedback.busy {
+  color: #1e3a8a;
+  background: #eff6ff;
+  border-color: #bfdbfe;
 }
 
 .err,
