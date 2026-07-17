@@ -103,6 +103,11 @@ button.primary {
   margin-bottom: 0;
 }
 
+.schema-overview-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .schema-overview-header button {
   cursor: pointer;
   border: 1px solid var(--border);

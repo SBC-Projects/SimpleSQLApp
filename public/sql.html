@@ -38,7 +38,10 @@
     <div class="schema-overview" id="schemaOverview" aria-label="Tables and columns">
       <div class="schema-overview-header">
         <span class="sql-helpers-label">Tables and columns</span>
-        <button type="button" id="refreshSchema">Refresh</button>
+        <div class="schema-overview-actions">
+          <button type="button" id="exportSchema">Export schema</button>
+          <button type="button" id="refreshSchema">Refresh</button>
+        </div>
       </div>
       <div id="schemaList" class="schema-list">
         <p class="hint">Loading tables…</p>
@@ -71,6 +74,7 @@
       const runBtn = document.getElementById("run");
       const sqlSnippets = document.getElementById("sqlSnippets");
       const schemaList = document.getElementById("schemaList");
+      const exportSchema = document.getElementById("exportSchema");
       const refreshSchema = document.getElementById("refreshSchema");
       const tableSelect = document.getElementById("tableSelect");
       const previewTable = document.getElementById("previewTable");
@@ -274,6 +278,10 @@
 
       refreshSchema.addEventListener("click", () => {
         loadTables(selectedTable());
+      });
+
+      exportSchema.addEventListener("click", () => {
+        window.location.assign("/api/schema");
       });
 
       previewTable.addEventListener("click", () => {

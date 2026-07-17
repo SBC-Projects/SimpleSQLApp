@@ -129,6 +129,24 @@ app.delete("/api/users/:id", (req, res) => {
 registerExcelUploadRoutes(app);
 registerExploreRoutes(app);
 
+// Download the current database schema as a plain-text SQL file.
+app.get("/api/schema", (_req, res) => {
+  try {
+    const db = getDb();
+    const rows = db
+      .prepare(
+        "SELECT sql FROM sqlite_master WHERE sql IS NOT NULL ORDER BY type, name"
+      )
+      .all();
+    const schema = rows.map((row) => `${row.sql};`).join("\n") + "\n";
+
+    res.attachment("schema.sql");
+    res.type("text/plain").send(schema);
+  } catch (e) {
+    res.status(500).json({ error: String(e.message) });
+  }
+});
+
 /**
  * Run arbitrary SQL from the SQL console page.
  * INSECURE: never expose this on the public internet — any caller can read or change the whole database.
