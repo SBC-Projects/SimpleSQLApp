@@ -42,6 +42,12 @@ npm run init-db
 npm start
 ```
 
+To save the current database schema (CREATE statements only, no data) as **`schema.sql`** in the project root:
+
+```bash
+npm run "export sql schema"
+```
+
 When the server is running:
 
 - Codespaces forwards port **3000**. Open the **Ports** panel (often in the bottom area), find **3000**, and use **Open in browser** — or click the forwarded URL GitHub suggests.
@@ -63,6 +69,14 @@ npm run init-db
 npm start
 ```
 
+Export the schema anytime with:
+
+```bash
+npm run "export sql schema"
+```
+
+That writes **`schema.sql`** in the project root (CREATE statements only — no row data).
+
 Then open **http://localhost:3000**. Home page **`/`** is the users table; **`/sql.html`** is the SQL practice page; **`/upload.html`** imports Excel sheets.
 
 ---
@@ -75,6 +89,7 @@ Then open **http://localhost:3000**. Home page **`/`** is the users table; **`/s
 | `lib/db.js` | Opens the SQLite file using Node’s **`node:sqlite`** module (no extra drivers). |
 | `lib/excel-upload.js` | Excel preview / create-table / import routes used by **`/upload.html`**. |
 | `scripts/init-db.js` | Creates the schema + seeds dummy users (**`npm run init-db`**). |
+| `scripts/export-schema.js` | Writes CREATE statements to **`schema.sql`** (**`npm run "export sql schema"`**). |
 | `public/` | Static files for the browser: HTML, **`css/`**, **`js/`**. |
 | `data/` | Where **`simplesql.db`** ends up after you run `npm run init-db`. |
 

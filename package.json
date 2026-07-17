@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "init-db": "node scripts/init-db.js"
+    "init-db": "node scripts/init-db.js",
+    "export sql schema": "node scripts/export-schema.js"
   },
   "engines": {
     "node": ">=22.5.0"
