@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<!--
+  API fetch demo: pull JSON from an external sensors API and show it two ways —
+  (1) as raw text, and (2) as a table of rows.
+
+  Nothing here talks to our SQLite database. The browser calls a public URL
+  on the internet, reads the response, and draws it on the page.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>API data</title>
+    <link rel="stylesheet" href="/css/common.css" />
+    <link rel="stylesheet" href="/css/api.css" />
+  </head>
+  <body>
+    <nav>
+      <a href="/">Users</a>
+      <a href="/sql.html">SQL console</a>
+      <a href="/upload.html">Upload Excel</a>
+      <a href="/explore.html">Explore data</a>
+      <a href="/api.html">API data</a>
+    </nav>
+
+    <h1>API data</h1>
+    <p class="intro">
+      An <strong>API</strong> is a URL that returns data (usually JSON) instead of a
+      normal web page. This page uses <code>fetch()</code> to ask an external sensors
+      API for records, then shows the answer in two formats.
+    </p>
+
+    <section class="instructions">
+      <h2>How to use this page</h2>
+      <ol>
+        <li>Optionally change how many rows to request (<strong>limit</strong>).</li>
+        <li>Click <strong>Load data</strong> — the browser sends a GET request to the API URL.</li>
+        <li>Look at <strong>1. Raw data</strong> — the JSON text exactly as it arrived.</li>
+        <li>Look at <strong>2. Rows</strong> — the same <code>data</code> array drawn as a table.</li>
+      </ol>
+      <p class="hint">
+        Base URL:
+        <a href="https://digisolia3api.vercel.app/api/sensors" target="_blank" rel="noopener"
+          >https://digisolia3api.vercel.app/api/sensors</a
+        >
+      </p>
+    </section>
+
+    <section class="controls">
+      <label class="field">
+        <span class="field-label">limit (how many records)</span>
+        <input
+          id="limitInput"
+          class="field-input"
+          type="number"
+          min="1"
+          max="100"
+          value="10"
+        />
+      </label>
+      <p class="actions">
+        <button type="button" id="loadBtn" class="primary">Load data</button>
+      </p>
+      <p id="urlBox" class="url-box hint">URL will appear here after you load.</p>
+      <p id="errorBox" class="err" hidden role="status" aria-live="polite"></p>
+      <p id="statusBox" class="ok" hidden role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="result-section">
+      <h2>1. Raw data</h2>
+      <p class="hint">
+        This is <code>JSON.stringify</code> of the whole response — good for seeing the
+        shape: <code>total</code>, <code>limit</code>, <code>offset</code>, and
+        <code>data</code>.
+      </p>
+      <pre id="rawOut" class="raw-out"><code>Click “Load data” to fetch JSON.</code></pre>
+    </section>
+
+    <section class="result-section">
+      <h2>2. Rows</h2>
+      <p class="hint">
+        Here we loop over the <code>data</code> array and build one table row per
+        record — same idea as the Users page, but the source is an external API.
+      </p>
+      <div id="rowsOut" class="rows-out">
+        <p class="empty">No rows yet.</p>
+      </div>
+    </section>
+
+    <script src="/js/api.js" defer></script>
+  </body>
+</html>
