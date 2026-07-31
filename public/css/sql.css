@@ -251,6 +251,37 @@ button.primary {
   color: #b91c1c;
 }
 
+.batch-summary {
+  margin: 0 0 12px;
+  font-weight: 600;
+}
+
+.batch-item {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.batch-item:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.batch-item-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  font-family: system-ui, "Segoe UI", sans-serif;
+}
+
+.batch-exec {
+  margin: 0;
+  font: inherit;
+  white-space: pre-wrap;
+}
+
 table.data {
   border-collapse: collapse;
   font-size: 13px;

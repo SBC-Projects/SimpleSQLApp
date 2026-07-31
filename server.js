@@ -148,36 +148,256 @@ app.get("/api/schema", (_req, res) => {
 });
 
 /**
+ * True if `sql` has something to run after ignoring whitespace and comments.
+ * Stops a trailing `-- note` (with no real statement) from becoming a failed prepare().
+ */
+function sqlHasExecutableContent(sql) {
+  let i = 0;
+  let inSingle = false;
+  let inDouble = false;
+  let inLineComment = false;
+  let inBlockComment = false;
+
+  while (i < sql.length) {
+    const ch = sql[i];
+    const next = sql[i + 1];
+
+    if (inLineComment) {
+      if (ch === "\n") inLineComment = false;
+      i += 1;
+      continue;
+    }
+    if (inBlockComment) {
+      if (ch === "*" && next === "/") {
+        i += 2;
+        inBlockComment = false;
+        continue;
+      }
+      i += 1;
+      continue;
+    }
+    if (inSingle) {
+      if (ch === "'" && next === "'") {
+        i += 2;
+        continue;
+      }
+      if (ch === "'") inSingle = false;
+      i += 1;
+      continue;
+    }
+    if (inDouble) {
+      if (ch === '"' && next === '"') {
+        i += 2;
+        continue;
+      }
+      if (ch === '"') inDouble = false;
+      i += 1;
+      continue;
+    }
+
+    if (ch === "-" && next === "-") {
+      i += 2;
+      inLineComment = true;
+      continue;
+    }
+    if (ch === "/" && next === "*") {
+      i += 2;
+      inBlockComment = true;
+      continue;
+    }
+    if (ch === "'") {
+      inSingle = true;
+      i += 1;
+      continue;
+    }
+    if (ch === '"') {
+      inDouble = true;
+      i += 1;
+      continue;
+    }
+    if (!/\s/.test(ch)) return true;
+    i += 1;
+  }
+  return false;
+}
+
+/**
+ * Split a script into individual statements on `;`.
+ * Ignores semicolons inside 'strings', "identifiers", -- line comments, and block comments.
+ * Needed because db.prepare() only runs the first statement when several are pasted together.
+ */
+function splitSqlStatements(sql) {
+  const statements = [];
+  let current = "";
+  let i = 0;
+  let inSingle = false;
+  let inDouble = false;
+  let inLineComment = false;
+  let inBlockComment = false;
+
+  function pushCurrent() {
+    const trimmed = current.trim();
+    if (trimmed && sqlHasExecutableContent(trimmed)) {
+      statements.push(trimmed);
+    }
+    current = "";
+  }
+
+  while (i < sql.length) {
+    const ch = sql[i];
+    const next = sql[i + 1];
+
+    if (inLineComment) {
+      current += ch;
+      if (ch === "\n") inLineComment = false;
+      i += 1;
+      continue;
+    }
+
+    if (inBlockComment) {
+      current += ch;
+      if (ch === "*" && next === "/") {
+        current += next;
+        i += 2;
+        inBlockComment = false;
+        continue;
+      }
+      i += 1;
+      continue;
+    }
+
+    if (inSingle) {
+      current += ch;
+      // SQLite escapes a quote inside a string by doubling it: 'O''Brien'
+      if (ch === "'" && next === "'") {
+        current += next;
+        i += 2;
+        continue;
+      }
+      if (ch === "'") inSingle = false;
+      i += 1;
+      continue;
+    }
+
+    if (inDouble) {
+      current += ch;
+      if (ch === '"' && next === '"') {
+        current += next;
+        i += 2;
+        continue;
+      }
+      if (ch === '"') inDouble = false;
+      i += 1;
+      continue;
+    }
+
+    if (ch === "-" && next === "-") {
+      current += ch + next;
+      i += 2;
+      inLineComment = true;
+      continue;
+    }
+    if (ch === "/" && next === "*") {
+      current += ch + next;
+      i += 2;
+      inBlockComment = true;
+      continue;
+    }
+    if (ch === "'") {
+      current += ch;
+      inSingle = true;
+      i += 1;
+      continue;
+    }
+    if (ch === '"') {
+      current += ch;
+      inDouble = true;
+      i += 1;
+      continue;
+    }
+    if (ch === ";") {
+      pushCurrent();
+      i += 1;
+      continue;
+    }
+
+    current += ch;
+    i += 1;
+  }
+
+  pushCurrent();
+  return statements;
+}
+
+/**
+ * Run one SQL statement. SELECT/PRAGMA-style queries return rows; INSERT/UPDATE/… return changes.
+ * node:sqlite exposes that difference via statement.columns(): non-empty means "this returns a result set".
+ */
+function runOneSqlStatement(db, sql) {
+  const stmt = db.prepare(sql);
+  const colInfo = stmt.columns();
+
+  if (colInfo.length > 0) {
+    return {
+      type: "result",
+      columns: colInfo.map((c) => c.name),
+      rows: stmt.all(),
+    };
+  }
+
+  const info = stmt.run();
+  return {
+    type: "exec",
+    affectedRows: Number(info.changes),
+    insertId:
+      info.lastInsertRowid !== undefined && info.lastInsertRowid !== null
+        ? Number(info.lastInsertRowid)
+        : undefined,
+  };
+}
+
+/**
  * Run arbitrary SQL from the SQL console page.
  * INSECURE: never expose this on the public internet — any caller can read or change the whole database.
  *
- * SQLite statements either return rows (SELECT, PRAGMA, …) or just affect the DB (INSERT, UPDATE, …).
- * node:sqlite exposes that difference via statement.columns(): non-empty means "this returns a result set".
+ * Students often paste CREATE TABLE plus several INSERT INTO lines. We split on `;` and run each
+ * statement in order. One statement keeps the old response shape; several return type: "batch".
  */
 app.post("/api/sql", (req, res) => {
   try {
     const sql = (req.body?.sql ?? "").trim();
     if (!sql) return res.status(400).json({ error: "sql required" });
 
-    const db = getDb();
-    const stmt = db.prepare(sql);
-    const colInfo = stmt.columns();
-
-    if (colInfo.length > 0) {
-      const columns = colInfo.map((c) => c.name);
-      const rows = stmt.all();
-      res.json({ type: "result", columns, rows });
-    } else {
-      const info = stmt.run();
-      res.json({
-        type: "exec",
-        affectedRows: Number(info.changes),
-        insertId:
-          info.lastInsertRowid !== undefined && info.lastInsertRowid !== null
-            ? Number(info.lastInsertRowid)
-            : undefined,
-      });
+    const statements = splitSqlStatements(sql);
+    if (statements.length === 0) {
+      return res.status(400).json({ error: "sql required" });
     }
+
+    const db = getDb();
+    const results = [];
+
+    for (let i = 0; i < statements.length; i++) {
+      try {
+        results.push(runOneSqlStatement(db, statements[i]));
+      } catch (e) {
+        return res.status(400).json({
+          error:
+            "Statement " +
+            (i + 1) +
+            " of " +
+            statements.length +
+            " failed: " +
+            String(e.message),
+        });
+      }
+    }
+
+    // Single statement — same JSON shape as before (browse buttons / simple queries).
+    if (results.length === 1) {
+      return res.json(results[0]);
+    }
+
+    res.json({ type: "batch", results });
   } catch (e) {
     res.status(400).json({ error: String(e.message) });
   }

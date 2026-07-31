@@ -19,6 +19,8 @@
     <h1>SQL console</h1>
     <p class="warn">
       Queries run as the app DB user. Do not expose this on a public network.
+      You can paste several statements separated by semicolons (for example a
+      CREATE TABLE followed by INSERT INTO lines) and run them all at once.
     </p>
     <div class="sql-helpers" id="sqlSnippets" aria-label="SQL snippet shortcuts">
       <span class="sql-helpers-label">Quick insert</span>
@@ -156,14 +158,12 @@
           showResult(escapeHtml(j.error || "Error"), "err");
           return;
         }
+        if (j.type === "batch" && Array.isArray(j.results)) {
+          showResult(renderBatch(j.results), "ok");
+          return;
+        }
         if (j.type === "exec") {
-          const parts = [
-            "OK",
-            "affectedRows: " + j.affectedRows,
-            j.insertId != null ? "insertId: " + j.insertId : null,
-            j.changedRows != null ? "changedRows: " + j.changedRows : null,
-          ].filter(Boolean);
-          showResult(parts.join("\n"), "ok");
+          showResult(formatExecResult(j), "ok");
           return;
         }
         if (j.type === "result" && j.columns && j.rows) {
@@ -171,6 +171,48 @@
           return;
         }
         showResult(escapeHtml(JSON.stringify(j, null, 2)), "ok");
+      }
+
+      function formatExecResult(j) {
+        const parts = [
+          "OK",
+          "affectedRows: " + j.affectedRows,
+          j.insertId != null ? "insertId: " + j.insertId : null,
+          j.changedRows != null ? "changedRows: " + j.changedRows : null,
+        ].filter(Boolean);
+        return parts.join("\n");
+      }
+
+      // Several statements in one Run click — show a short summary for each.
+      function renderBatch(results) {
+        let html =
+          "<p class='batch-summary'>OK — ran " +
+          results.length +
+          " statement" +
+          (results.length === 1 ? "" : "s") +
+          "</p>";
+
+        for (let i = 0; i < results.length; i++) {
+          const item = results[i];
+          html += "<div class='batch-item'>";
+          html +=
+            "<div class='batch-item-label'>Statement " + (i + 1) + "</div>";
+          if (item.type === "exec") {
+            html +=
+              "<pre class='batch-exec'>" +
+              escapeHtml(formatExecResult(item)) +
+              "</pre>";
+          } else if (item.type === "result" && item.columns && item.rows) {
+            html += renderTable(item.columns, item.rows);
+          } else {
+            html +=
+              "<pre class='batch-exec'>" +
+              escapeHtml(JSON.stringify(item, null, 2)) +
+              "</pre>";
+          }
+          html += "</div>";
+        }
+        return html;
       }
 
       runBtn.addEventListener("click", async () => {
