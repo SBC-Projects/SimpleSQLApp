@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<!--
+  sqlBase — the simplest SQL page.
+
+  Goal: show students the basic programming pattern:
+    1. Read SQL from a text box
+    2. Send it to the server with fetch()
+    3. Loop through the rows that come back
+    4. Build an HTML table string and put it on the page
+
+  The full SQL console (sql.html) has more features. This page is the
+  "start here" version — only an input, a Run button, and a table.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SQL basics</title>
+    <link rel="stylesheet" href="/css/common.css" />
+    <link rel="stylesheet" href="/css/sqlBase.css" />
+  </head>
+  <body>
+    <nav>
+      <a href="/">Users</a>
+      <a href="/sql.html">SQL console</a>
+      <a href="/sqlBase.html">SQL basics</a>
+      <a href="/upload.html">Upload Excel</a>
+      <a href="/explore.html">Explore data</a>
+      <a href="/api.html">API data</a>
+    </nav>
+
+    <h1>SQL basics</h1>
+    <p class="intro">
+      Type a SQL query, click Run, and watch the JavaScript loop through each
+      row to build an HTML table. Open <code>js/sqlBase.js</code> to see the
+      whole program — it is intentionally short.
+    </p>
+
+    <textarea id="sqlBox" spellcheck="false">SELECT * FROM users LIMIT 10;</textarea>
+    <button type="button" id="runBtn">Run</button>
+
+    <div id="out"></div>
+
+    <script src="/js/sqlBase.js" defer></script>
+  </body>
+</html>
